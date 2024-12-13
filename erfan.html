@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WireGuard Config Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #fff;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .disabled {
+            pointer-events: none;
+            background-color: #ccc;
+        }
+        .countdown {
+            font-size: 18px;
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <h1>WireGuard Config Generator</h1>
+    <p id="countdown" class="countdown"></p>
+    <button id="generateButton" onclick="generateConfig()">Generate Config</button>
+    <h2>Generated Configuration:</h2>
+    <pre id="configOutput">Click the button to generate your WireGuard configuration.</pre>
+    <script>
+        const germanIPPrefixes = [
+            "5.9",
+            "88.198",
+            "144.76",
+            "78.46",
+            "195.201"
+        ];
+
+        // تاریخ شروع اعتبار
+        const startDate = new Date("2024-12-13");
+        const expirationDate = new Date(startDate);
+        expirationDate.setMonth(expirationDate.getMonth() + 1); // افزودن یک ماه
+
+        function isExpired() {
+            const currentDate = new Date();
+            return currentDate > expirationDate;
+        }
+
+        function generateRandomIP() {
+            const prefix = germanIPPrefixes[Math.floor(Math.random() * germanIPPrefixes.length)];
+            const thirdOctet = Math.floor(Math.random() * 256);
+            const fourthOctet = Math.floor(Math.random() * 254) + 1;
+            return `${prefix}.${thirdOctet}.${fourthOctet}`;
+        }
+
+        function generateKey() {
+            const array = new Uint8Array(32);
+            window.crypto.getRandomValues(array);
+            return btoa(String.fromCharCode(...array));
+        }
+
+        function generateConfig() {
+            if (isExpired()) {
+                alert("The configuration generator has expired.");
+                return;
+            }
+
+            const privateKey = generateKey();
+            const publicKey = generateKey();
+            const peerPrivateKey = generateKey();
+            const peerPublicKey = generateKey();
+
+            const address = generateRandomIP();
+            const dns = generateRandomIP();
+            const endpoint = generateRandomIP();
+            const allowedIPs = generateRandomIP();
+
+            const port = 51820;
+
+            const config = `
+[Interface]
+PrivateKey = ${privateKey}
+Address = ${address}/24
+DNS = ${dns}
+
+[Peer]
+PublicKey = ${peerPublicKey}
+Endpoint = ${endpoint}:${port}
+AllowedIPs = ${allowedIPs}/32
+            `.trim();
+
+            document.getElementById('configOutput').textContent = config;
+        }
+
+        function updateCountdown() {
+            if (isExpired()) {
+                const button = document.getElementById("generateButton");
+                button.classList.add("disabled");
+                button.textContent = "Expired";
+                document.getElementById('configOutput').textContent = "This tool has expired and is no longer functional.";
+                return;
+            }
+
+            const currentDate = new Date();
+            const timeRemaining = expirationDate - currentDate;
+            const daysRemaining = Math.floor(timeRemaining / (1000 * 60 * 60 * 24));
+            document.getElementById('countdown').textContent = `Time remaining: ${daysRemaining} days`;
+        }
+
+        // به‌روزرسانی شمارش معکوس هر ثانیه
+        setInterval(updateCountdown, 1000);
+
+        // بارگذاری اولیه وضعیت
+        document.addEventListener("DOMContentLoaded", updateCountdown);
+    </script>
+</body>
+</html>
